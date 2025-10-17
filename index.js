@@ -21,7 +21,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.WEBHOOK_PORT || 3001;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
-const DEPLOY_SCRIPT = process.env.DEPLOY_SCRIPT || '/home/work/taogold/tg-fe/scripts/deploy-server.sh';
+const DEPLOY_SCRIPT = process.env.DEPLOY_SCRIPT || './scripts/deploy-server.sh';
 const BRANCH = process.env.DEPLOY_BRANCH || 'main';
 
 app.use(bodyParser.json());
