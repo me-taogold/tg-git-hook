@@ -36,43 +36,13 @@ cd "$DEPLOY_PATH" || {
 }
 
 echo -e "${YELLOW}[1/7] Pulling latest changes from Git...${NC}"
-git fetch origin
-git reset --hard origin/$BRANCH
+git pull
 
 echo -e "${YELLOW}[2/7] Installing dependencies...${NC}"
-npm ci --production=false
-
-echo -e "${YELLOW}[3/7] Loading environment variables...${NC}"
-if [ ! -f .env ]; then
-    echo -e "${RED}Error: .env file not found!${NC}"
-    echo -e "${YELLOW}Please create .env file with required variables${NC}"
-    exit 1
-fi
+npm i --production=false
 
 echo -e "${YELLOW}[4/7] Building application...${NC}"
 npm run build
-
-echo -e "${YELLOW}[5/7] Backing up previous build...${NC}"
-if [ -d "build.backup" ]; then
-    rm -rf build.backup
-fi
-if [ -d "current" ]; then
-    mv current build.backup
-fi
-
-echo -e "${YELLOW}[6/7] Deploying new build...${NC}"
-if [ -d "current" ]; then
-    rm -rf current
-fi
-mv build current
-
-echo -e "${YELLOW}[7/7] Restarting web server...${NC}"
-if command -v nginx &> /dev/null; then
-    sudo nginx -t && sudo systemctl reload nginx
-    echo -e "${GREEN}Nginx reloaded successfully${NC}"
-else
-    echo -e "${YELLOW}Nginx not found, skipping reload${NC}"
-fi
 
 # Clean up old node_modules if needed (optional)
 # npm prune --production
