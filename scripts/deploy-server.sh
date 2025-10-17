@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ################################################################################
-# Deployment Script for Ubuntu Server
-# This script should be placed on your Ubuntu server
+# Deployment Script
+# Pulls latest code from Git and builds the application
 ################################################################################
 
 set -e  # Exit on any error
@@ -10,8 +10,6 @@ set -e  # Exit on any error
 # Configuration - Update these variables
 PROJECT_NAME="crypto-frontend"
 DEPLOY_PATH="/home/work/taogold/tg-fe"
-NGINX_CONFIG="/etc/nginx/sites-available/crypto-frontend"
-REPO_URL="https://github.com/me-taogold/tg-fe.git"
 BRANCH="main"
 
 # Colors for output
@@ -24,28 +22,20 @@ echo -e "${GREEN}=====================================${NC}"
 echo -e "${GREEN}Starting deployment of ${PROJECT_NAME}${NC}"
 echo -e "${GREEN}=====================================${NC}"
 
-# Check if running as root for nginx operations
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${YELLOW}Note: Some operations may require sudo privileges${NC}"
-fi
-
 # Navigate to deployment directory
 cd "$DEPLOY_PATH" || {
     echo -e "${RED}Deployment path not found: $DEPLOY_PATH${NC}"
     exit 1
 }
 
-echo -e "${YELLOW}[1/7] Pulling latest changes from Git...${NC}"
-git pull
+echo -e "${YELLOW}[1/3] Pulling latest changes from Git...${NC}"
+git pull origin "$BRANCH"
 
-echo -e "${YELLOW}[2/7] Installing dependencies...${NC}"
-npm i --production=false
+echo -e "${YELLOW}[2/3] Installing dependencies...${NC}"
+npm install
 
-echo -e "${YELLOW}[4/7] Building application...${NC}"
+echo -e "${YELLOW}[3/3] Building application...${NC}"
 npm run build
-
-# Clean up old node_modules if needed (optional)
-# npm prune --production
 
 echo -e "${GREEN}=====================================${NC}"
 echo -e "${GREEN}Deployment completed successfully!${NC}"
