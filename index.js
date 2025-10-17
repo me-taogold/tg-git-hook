@@ -16,12 +16,11 @@ const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const { exec } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 
 const app = express();
 const PORT = process.env.WEBHOOK_PORT || 3001;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
-const DEPLOY_SCRIPT = process.env.DEPLOY_SCRIPT || path.join(__dirname, 'scripts', 'deploy-server.sh');
+const DEPLOY_PATH = process.env.DEPLOY_PATH || '/home/work/taogold/tg-fe';
 const BRANCH = process.env.DEPLOY_BRANCH || 'main';
 
 app.use(bodyParser.json());
@@ -78,14 +77,23 @@ app.post('/webhook', (req, res) => {
     console.log('[WEBHOOK] Commit:', payload.head_commit?.id?.substring(0, 7));
     console.log('[WEBHOOK] Message:', payload.head_commit?.message);
 
-    // Check if deployment script exists
-    if (!fs.existsSync(DEPLOY_SCRIPT)) {
-        console.error('[WEBHOOK] Deployment script not found:', DEPLOY_SCRIPT);
+    // Check if deployment directory exists
+    if (!fs.existsSync(DEPLOY_PATH)) {
+        console.error('[WEBHOOK] Deployment path not found:', DEPLOY_PATH);
         return;
     }
 
-    // Execute deployment script
-    exec(`bash ${DEPLOY_SCRIPT}`, (error, stdout, stderr) => {
+    // Deployment commands to run sequentially
+    const commands = [
+        `cd ${DEPLOY_PATH}`,
+        `git pull`,
+        'npm run build'
+    ].join(' && ');
+
+    console.log('[WEBHOOK] Executing:', commands);
+
+    // Execute deployment commands
+    exec(commands, { cwd: DEPLOY_PATH }, (error, stdout, stderr) => {
         if (error) {
             console.error('[WEBHOOK] Deployment failed:', error);
             console.error('[WEBHOOK] Error output:', stderr);
@@ -94,6 +102,10 @@ app.post('/webhook', (req, res) => {
 
         console.log('[WEBHOOK] Deployment output:');
         console.log(stdout);
+        if (stderr) {
+            console.log('[WEBHOOK] Deployment warnings:');
+            console.log(stderr);
+        }
         console.log('[WEBHOOK] Deployment completed successfully!');
     });
 });
@@ -104,7 +116,7 @@ app.get('/health', (req, res) => {
         status: 'ok',
         timestamp: new Date().toISOString(),
         branch: BRANCH,
-        deployScript: DEPLOY_SCRIPT
+        deployPath: DEPLOY_PATH
     });
 });
 
@@ -115,7 +127,7 @@ app.listen(PORT, () => {
     console.log('=====================================');
     console.log(`Listening on port: ${PORT}`);
     console.log(`Watching branch: ${BRANCH}`);
-    console.log(`Deploy script: ${DEPLOY_SCRIPT}`);
+    console.log(`Deploy path: ${DEPLOY_PATH}`);
     console.log('Health check: http://localhost:' + PORT + '/health');
     console.log('Webhook URL: http://YOUR_SERVER_IP:' + PORT + '/webhook');
     console.log('=====================================');
